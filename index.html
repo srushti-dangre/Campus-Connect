@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Campus Connect</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#eef2ff;
+}
+header{
+    background:#4f46e5;
+    color:white;
+    text-align:center;
+    padding:15px;
+}
+.box{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+.login{
+    max-width:400px;
+    margin:50px auto;
+}
+input, select, button{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+}
+button{
+    background:#4f46e5;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+.error{
+    color:red;
+    font-size:14px;
+}
+.hidden{
+    display:none;
+}
+.container{
+    padding:20px;
+}
+.controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
+}
+.events{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:15px;
+}
+.card{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+}
+.card h3{
+    margin:0;
+    color:#4f46e5;
+}
+.small{
+    font-size:14px;
+}
+.calendar{
+    margin-top:25px;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+}
+.day{
+    background:white;
+    padding:8px;
+    min-height:80px;
+    border-radius:6px;
+    font-size:13px;
+}
+.event-dot{
+    background:#4f46e5;
+    color:white;
+    padding:2px 4px;
+    border-radius:4px;
+    font-size:11px;
+    margin-top:3px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>Campus Connect</h2>
+<p> Stay Updated. Never miss an event.</p>
+</header>
+
+<!-- LOGIN PAGE -->
+<div class="login box" id="loginBox">
+<h3>Student Login</h3>
+
+<input id="college" placeholder="College Name">
+<input id="student" placeholder="Student Name">
+<input id="admission" placeholder="Admission Number">
+<input id="password" type="password" placeholder="Password (min 8 chars + special char)">
+
+<div class="error" id="error"></div>
+<button onclick="login()">Login</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container hidden" id="mainPage">
+
+<h2 id="welcome"></h2>
+
+<div class="controls">
+<input id="search" placeholder="Search events" onkeyup="renderEvents()">
+
+<select id="filter" onchange="renderEvents()">
+<option value="all">All Categories</option>
+<option value="Tech">Tech</option>
+<option value="Workshop">Workshop</option>
+<option value="Cultural">Cultural</option>
+</select>
+
+<button onclick="toggleCalendar()">Calendar View</button>
+<button onclick="logout()">Logout</button>
+</div>
+
+<div class="events" id="eventList"></div>
+
+<!-- CALENDAR -->
+<div class="calendar hidden" id="calendarView">
+<h3>February 2026</h3>
+<div class="grid" id="calendarGrid"></div>
+</div>
+
+<h3>⭐ Saved Events</h3>
+<div class="events" id="savedList"></div>
+
+</div>
+
+<script>
+const events = [
+ {t:"AI Workshop", c:"Workshop", day:10, time:"10:00 AM", venue:"Lab 1"},
+ {t:"Hackathon", c:"Tech", day:12, time:"9:00 AM", venue:"Auditorium"},
+ {t:"Cyber Security Talk", c:"Tech", day:14, time:"2:00 PM", venue:"Seminar Hall"},
+ {t:"Robotics Expo", c:"Workshop", day:16, time:"11:00 AM", venue:"Main Hall"},
+ {t:"Coding Contest", c:"Tech", day:18, time:"1:00 PM", venue:"Computer Lab"},
+ {t:"Startup Meet", c:"Tech", day:20, time:"4:00 PM", venue:"Conference Room"},
+ {t:"Cultural Fest", c:"Cultural", day:22, time:"6:00 PM", venue:"Ground"},
+ {t:"Drama Night", c:"Cultural", day:24, time:"5:00 PM", venue:"Open Theatre"},
+ {t:"Guest Lecture", c:"Workshop", day:26, time:"3:00 PM", venue:"Auditorium"},
+ {t:"Project Expo", c:"Tech", day:28, time:"11:00 AM", venue:"Main Block"}
+];
+
+let saved = [];
+
+function login(){
+    const clg = college.value.trim();
+    const stu = student.value.trim();
+    const adm = admission.value.trim();
+    const pass = password.value;
+    const error = document.getElementById("error");
+
+    error.innerText = "";
+
+    if(!clg || !stu || !adm || !pass){
+        error.innerText = "All fields are required";
+        return;
+    }
+    if(pass.length < 8 || !/[!@#$%^&*]/.test(pass)){
+        error.innerText = "Password must be 8+ characters & contain special symbol";
+        return;
+    }
+
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("mainPage").classList.remove("hidden");
+    document.getElementById("welcome").innerText = "Welcome " + stu + " (" + clg + ")";
+
+    renderEvents();
+    renderCalendar();
+}
+
+function renderEvents(){
+    const s = search.value.toLowerCase();
+    const f = filter.value;
+    eventList.innerHTML = "";
+
+    events.filter(e=>{
+        return (f==="all" || e.c===f) && e.t.toLowerCase().includes(s);
+    }).forEach(e=>{
+        eventList.innerHTML += `
+        <div class="card">
+            <h3>${e.t}</h3>
+            <p class="small"><b>Date:</b> Feb ${e.day}</p>
+            <p class="small"><b>Time:</b> ${e.time}</p>
+            <p class="small"><b>Venue:</b> ${e.venue}</p>
+            <button onclick="saveEvent('${e.t}')">⭐ Save</button>
+        </div>`;
+    });
+}
+
+function saveEvent(title){
+    if(!saved.includes(title)){
+        saved.push(title);
+        renderSaved();
+    }
+}
+
+function renderSaved(){
+    savedList.innerHTML = "";
+    saved.forEach(e=>{
+        savedList.innerHTML += `<div class="card"><h3>${e}</h3></div>`;
+    });
+}
+
+function toggleCalendar(){
+    calendarView.classList.toggle("hidden");
+}
+
+function renderCalendar(){
+    calendarGrid.innerHTML = "";
+    for(let i=1;i<=28;i++){
+        const dayEvents = events.filter(e=>e.day===i);
+        calendarGrid.innerHTML += `
+        <div class="day">
+            <b>${i}</b>
+            ${dayEvents.map(e=>`<div class="event-dot">${e.t}</div>`).join("")}
+        </div>`;
+    }
+}
+
+function logout(){
+    location.reload();
+}
+</script>
+
+</body>
+</html>
